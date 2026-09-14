@@ -1,11 +1,396 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard Rintusac Creado por Moises</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Comercial · Rintusac SAC</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f5f3;
+    --panel: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --text: #0b0b0b;
+    --text-soft: #52514e;
+    --text-muted: #898781;
+    --accent: #2a78d6;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header */
+  .header {
+    background: var(--panel);
+    border-bottom: 0.5px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 38px; height: 38px; border-radius: 9px;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 16px; letter-spacing: -0.5px;
+  }
+  .brand-name { font-size: 16px; font-weight: 500; }
+  .brand-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .header-meta { font-size: 12px; color: var(--text-muted); text-align: right; }
+  .header-meta strong { color: var(--text-soft); display: block; font-size: 13px; }
+
+  /* Layout */
+  .main { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
+  .section-title {
+    font-size: 13px; font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 14px;
+  }
+
+  /* KPI row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    border: 0.5px solid var(--border);
+  }
+  .kpi-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 500; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Charts grid */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 680px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--panel);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    padding: 20px 24px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 500;
+    color: var(--text-soft);
+    margin-bottom: 16px;
+  }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* Table */
+  .table-card {
+    background: var(--panel);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 16px 24px 12px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    padding: 10px 24px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+  }
+  thead th:last-child { text-align: right; }
+  tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg); }
+  tbody td { padding: 11px 24px; color: var(--text); }
+  tbody td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .badge {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .pct-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .pct-bar {
+    height: 4px; border-radius: 2px;
+    background: var(--accent);
+    opacity: 0.25;
+    flex-shrink: 0;
+  }
+  .pct-label { font-size: 12px; color: var(--text-muted); min-width: 36px; text-align: right; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 0.5px solid var(--border);
+    margin-top: 12px;
+  }
+
+  /* Loading */
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    height: 200px; color: var(--text-muted); font-size: 14px;
+    flex-direction: column; gap: 12px;
+  }
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
-  <h1>Dashboard Comercial - Rintusac SAC</h1>
-  <p>En construcción...</p>
+
+<header class="header">
+  <div class="brand">
+    <div class="brand-mark">R</div>
+    <div>
+      <div class="brand-name">Rintusac SAC</div>
+      <div class="brand-sub">Dashboard Comercial</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <strong id="periodo-label">Cargando...</strong>
+    Actualizado automáticamente
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="section-title" style="margin-bottom:14px">Resumen del periodo</div>
+
+  <div class="kpi-row" id="kpi-row">
+    <div class="loading"><div class="spinner"></div><span>Cargando datos...</span></div>
+  </div>
+
+  <div class="charts-grid" id="charts-grid" style="display:none">
+    <div class="card">
+      <div class="card-title">Ventas por sector — barras</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chartBar" role="img" aria-label="Ventas por sector en barras horizontales"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Distribución por sector</div>
+      <div id="legend-donut" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:12px;color:#898781"></div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="chartDonut" role="img" aria-label="Distribución porcentual por sector"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Detalle por sector</div>
+  <div class="table-card" id="table-card">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  Rintusac SAC · Intercambiadores de calor · Lima, Perú &nbsp;·&nbsp;
+  Datos generados desde Odoo 17
+</footer>
+
+<script>
+const CSV_URL = 'data/ventas_sector.csv';
+
+const COLORS = [
+  '#2a78d6','#eb6834','#1baf7a','#eda100',
+  '#e87ba4','#008300','#4a3aa7','#e34948'
+];
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('es-PE');
+}
+function pct(v, total) {
+  return ((v / total) * 100).toFixed(1) + '%';
+}
+
+Papa.parse(CSV_URL, {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    const rows = results.data;
+    if (!rows.length) return;
+
+    const periodo = rows[0]['Periodo'] || '';
+    document.getElementById('periodo-label').textContent =
+      'Periodo: ' + periodo;
+
+    const labels = rows.map(r => r['Sector']);
+    const values = rows.map(r => parseFloat(r['Monto_USD']) || 0);
+    const total  = values.reduce((a, b) => a + b, 0);
+    const top    = Math.max(...values);
+
+    // KPIs
+    document.getElementById('kpi-row').innerHTML = `
+      <div class="kpi">
+        <div class="kpi-label">Ventas totales</div>
+        <div class="kpi-value">${fmt(total)}</div>
+        <div class="kpi-sub">USD · ${periodo}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sectores activos</div>
+        <div class="kpi-value">${rows.length}</div>
+        <div class="kpi-sub">con facturación</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sector líder</div>
+        <div class="kpi-value" style="font-size:18px;line-height:1.2">${labels[0]}</div>
+        <div class="kpi-sub">${fmt(values[0])}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ticket promedio</div>
+        <div class="kpi-value">${fmt(total / rows.length)}</div>
+        <div class="kpi-sub">USD por sector</div>
+      </div>
+    `;
+
+    document.getElementById('charts-grid').style.display = 'grid';
+
+    // Bar chart horizontal
+    new Chart(document.getElementById('chartBar'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: COLORS.slice(0, values.length),
+          borderRadius: 4,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + fmt(ctx.raw) + ' (' + pct(ctx.raw, total) + ')'
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#e1e0d9' },
+            ticks: {
+              color: '#898781', font: { size: 11 },
+              callback: v => '$' + (v/1000).toFixed(0) + 'k'
+            },
+            border: { display: false }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: '#52514e', font: { size: 11 } },
+            border: { display: false }
+          }
+        }
+      }
+    });
+
+    // Donut chart
+    const legendEl = document.getElementById('legend-donut');
+    labels.forEach((l, i) => {
+      legendEl.innerHTML += `<span style="display:flex;align-items:center;gap:4px">
+        <span style="width:10px;height:10px;border-radius:2px;background:${COLORS[i]};flex-shrink:0"></span>
+        ${l.split('/')[0].trim()} ${pct(values[i], total)}
+      </span>`;
+    });
+
+    new Chart(document.getElementById('chartDonut'), {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: COLORS.slice(0, values.length),
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + fmt(ctx.raw) + ' · ' + pct(ctx.raw, total)
+            }
+          }
+        }
+      }
+    });
+
+    // Table
+    let rows_html = '';
+    rows.forEach((r, i) => {
+      const v = parseFloat(r['Monto_USD']) || 0;
+      const p = (v / total * 100).toFixed(1);
+      const barW = Math.round(v / top * 120);
+      rows_html += `<tr>
+        <td><span class="badge" style="background:${COLORS[i]}"></span>${r['Sector']}</td>
+        <td>${r['Periodo']}</td>
+        <td>
+          <div class="pct-bar-wrap">
+            <div class="pct-bar" style="width:${barW}px;opacity:0.7;background:${COLORS[i]}"></div>
+            <span class="pct-label">${p}%</span>
+          </div>
+        </td>
+        <td>${fmt(v)}</td>
+      </tr>`;
+    });
+
+    document.getElementById('table-card').innerHTML = `
+      <div class="table-header">
+        <div class="card-title" style="margin:0">Ventas por sector · ${periodo}</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Sector</th><th>Periodo</th><th>Participación</th><th>Monto USD</th>
+        </tr></thead>
+        <tbody>${rows_html}</tbody>
+      </table>
+    `;
+  },
+  error: function() {
+    document.getElementById('kpi-row').innerHTML =
+      '<div class="loading">No se pudo cargar el archivo CSV.<br>Verifica que <code>data/ventas_sector.csv</code> existe en el repositorio.</div>';
+  }
+});
+</script>
 </body>
 </html>
