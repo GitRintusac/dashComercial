@@ -3,394 +3,708 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Comercial · Rintusac SAC</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<title>Rintusac — Dashboard Comercial</title>
+<link href="https://fonts.googleapis.com/css2?family=Questrial&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  :root {
-    --bg: #f5f5f3;
-    --panel: #ffffff;
-    --border: rgba(0,0,0,0.08);
-    --text: #0b0b0b;
-    --text-soft: #52514e;
-    --text-muted: #898781;
-    --accent: #2a78d6;
-    --radius: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* Header */
-  .header {
-    background: var(--panel);
-    border-bottom: 0.5px solid var(--border);
-    padding: 16px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .brand-mark {
-    width: 38px; height: 38px; border-radius: 9px;
-    background: var(--accent); color: #fff;
-    display: grid; place-items: center;
-    font-weight: 700; font-size: 16px; letter-spacing: -0.5px;
-  }
-  .brand-name { font-size: 16px; font-weight: 500; }
-  .brand-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
-  .header-meta { font-size: 12px; color: var(--text-muted); text-align: right; }
-  .header-meta strong { color: var(--text-soft); display: block; font-size: 13px; }
-
-  /* Layout */
-  .main { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
-  .section-title {
-    font-size: 13px; font-weight: 500;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 14px;
-  }
-
-  /* KPI row */
-  .kpi-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
-    margin-bottom: 28px;
-  }
-  .kpi {
-    background: var(--panel);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    border: 0.5px solid var(--border);
-  }
-  .kpi-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
-  .kpi-value { font-size: 26px; font-weight: 500; color: var(--text); line-height: 1; }
-  .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-
-  /* Charts grid */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  @media (max-width: 680px) { .charts-grid { grid-template-columns: 1fr; } }
-
-  .card {
-    background: var(--panel);
-    border-radius: var(--radius);
-    border: 0.5px solid var(--border);
-    padding: 20px 24px;
-  }
-  .card-title {
-    font-size: 13px; font-weight: 500;
-    color: var(--text-soft);
-    margin-bottom: 16px;
-  }
-  .chart-wrap { position: relative; width: 100%; }
-
-  /* Table */
-  .table-card {
-    background: var(--panel);
-    border-radius: var(--radius);
-    border: 0.5px solid var(--border);
-    overflow: hidden;
-  }
-  .table-header {
-    padding: 16px 24px 12px;
-    border-bottom: 0.5px solid var(--border);
-  }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th {
-    padding: 10px 24px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background: var(--bg);
-    border-bottom: 0.5px solid var(--border);
-  }
-  thead th:last-child { text-align: right; }
-  tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.1s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: var(--bg); }
-  tbody td { padding: 11px 24px; color: var(--text); }
-  tbody td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-
-  .badge {
-    display: inline-block;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    margin-right: 8px;
-    vertical-align: middle;
-  }
-  .pct-bar-wrap { display: flex; align-items: center; gap: 8px; }
-  .pct-bar {
-    height: 4px; border-radius: 2px;
-    background: var(--accent);
-    opacity: 0.25;
-    flex-shrink: 0;
-  }
-  .pct-label { font-size: 12px; color: var(--text-muted); min-width: 36px; text-align: right; }
-
-  /* Footer */
-  .footer {
-    text-align: center;
-    padding: 24px;
-    font-size: 11px;
-    color: var(--text-muted);
-    border-top: 0.5px solid var(--border);
-    margin-top: 12px;
-  }
-
-  /* Loading */
-  .loading {
-    display: flex; align-items: center; justify-content: center;
-    height: 200px; color: var(--text-muted); font-size: 14px;
-    flex-direction: column; gap: 12px;
-  }
-  .spinner {
-    width: 24px; height: 24px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+:root{--carbon:#2B2D3A;--carbon2:#363849;--carbon3:#42455a;--yellow:#F5C518;--white:#FFFFFF;--bg:#F0F1F5;--border:#E2E4EC;--green:#22C55E;--green-bg:#dcfce7;--green-txt:#15803d;--blue-bg:#dbeafe;--blue-txt:#1d4ed8;--purple-bg:#ede9fe;--purple-txt:#6d28d9;--orange-bg:#ffedd5;--orange-txt:#c2410c;--red:#EF4444;--red-bg:#fee2e2;--red-txt:#b91c1c;--muted:#6B7280;--text:#1a1c28;--sb-w:240px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Questrial',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:14px;}
+.sidebar{width:var(--sb-w);min-width:var(--sb-w);background:var(--carbon);min-height:100vh;display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;transition:width .25s,min-width .25s,opacity .2s;}
+body.sb-closed .sidebar{width:0;min-width:0;overflow:hidden;opacity:0;}
+.sidebar-logo{padding:20px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--carbon3);}
+.logo-mark{width:34px;height:34px;background:var(--yellow);border-radius:8px;display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--carbon);flex-shrink:0;}
+.logo-text{color:#fff;font-size:16px;white-space:nowrap;}
+.sidebar-section{padding:14px 0 4px;}
+.sidebar-label{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;color:var(--carbon3);padding:0 18px 6px;text-transform:uppercase;white-space:nowrap;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;color:#9CA3AF;cursor:pointer;transition:all .15s;border-left:3px solid transparent;font-size:13px;white-space:nowrap;}
+.nav-item:hover{color:#fff;background:var(--carbon2);}
+.nav-item.active{color:#fff;background:var(--carbon2);border-left-color:var(--yellow);}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.7;}
+.nav-item.active svg,.nav-item:hover svg{opacity:1;}
+.sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--carbon3);display:flex;align-items:center;gap:10px;}
+.s-avatar{width:32px;height:32px;background:var(--yellow);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--carbon);flex-shrink:0;}
+.s-name{color:#fff;font-size:13px;}.s-role{color:#6B7280;font-size:11px;}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.menu-btn{background:none;border:none;cursor:pointer;padding:6px;color:var(--muted);display:flex;align-items:center;}
+.menu-btn:hover{color:var(--text);}
+.topbar-title{font-size:15px;color:var(--text);}
+.topbar-sub{color:var(--muted);font-size:12px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.last-update{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+.btn-period{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:3px;}
+.btn-p{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:5px;cursor:pointer;color:var(--muted);border:none;background:none;transition:all .15s;}
+.btn-p.active{background:var(--carbon);color:#fff;}
+.btn-p:hover:not(.active){background:var(--white);}
+.subnav{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;display:flex;overflow-x:auto;}
+.subnav::-webkit-scrollbar{height:0;}
+.sec-tab{padding:12px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.sec-tab:hover{color:var(--text);}
+.sec-tab.active{color:var(--carbon);border-bottom-color:var(--yellow);font-weight:600;}
+.content{padding:20px 24px;flex:1;overflow-x:hidden;}
+.section-view{display:none;}
+.section-view.active{display:block;}
+.kpi-grid{display:grid;gap:10px;margin-bottom:16px;}
+.g5{grid-template-columns:repeat(5,1fr);}
+.g4{grid-template-columns:repeat(4,1fr);}
+.g3{grid-template-columns:repeat(3,1fr);}
+.kpi-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.kpi-card.accent{border-left:3px solid var(--yellow);}
+.kpi-card.c-green{background:var(--green-bg);border-color:var(--green);}
+.kpi-card.c-red{background:var(--red-bg);border-color:var(--red);}
+.kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;}
+.kpi-card.c-green .kpi-label{color:var(--green-txt);}
+.kpi-card.c-red .kpi-label{color:var(--red-txt);}
+.kpi-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--text);}
+.kpi-val.sm{font-size:14px;line-height:1.4;}
+.kpi-val.yellow{color:#b45309;}
+.kpi-val.green{color:var(--green-txt);}
+.kpi-val.red{color:var(--red-txt);}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.empresa-card{background:var(--carbon);border-radius:12px;padding:18px 24px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr 1px 1fr;gap:0;align-items:center;position:relative;overflow:hidden;}
+.empresa-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--yellow);}
+.ec-div{width:1px;height:44px;background:var(--carbon3);margin:0 22px;}
+.ec-lbl{font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.ec-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:#fff;}
+.ec-val.yellow{color:var(--yellow);}
+.ec-progress{grid-column:1/-1;margin-top:14px;padding-top:14px;border-top:1px solid var(--carbon3);}
+.ec-prog-meta{display:flex;justify-content:space-between;margin-bottom:6px;font-size:10px;color:#9CA3AF;font-family:'JetBrains Mono',monospace;}
+.bar-track{background:var(--carbon3);border-radius:4px;height:7px;position:relative;}
+.bar-real{height:100%;border-radius:4px;background:var(--yellow);transition:width .8s;}
+.bar-proy{position:absolute;top:0;height:100%;border-radius:4px;background:rgba(245,197,24,.25);border:1px dashed var(--yellow);}
+.sec-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px;margin-top:4px;}
+.charts-row{display:grid;gap:12px;margin-bottom:16px;}
+.cr2{grid-template-columns:1fr 1fr;}
+.chart-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.chart-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.chart-wrap{position:relative;width:100%;}
+.tbl-card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.tbl-hdr{padding:14px 18px 10px;border-bottom:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:var(--bg);border-bottom:1px solid var(--border);}
+th.r{text-align:right;}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+td.r{text-align:right;font-family:'JetBrains Mono',monospace;}
+td.muted{color:var(--muted);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#fafafa;}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;}
+.b-green{background:var(--green-bg);color:var(--green-txt);}
+.b-red{background:var(--red-bg);color:var(--red-txt);}
+.b-blue{background:var(--blue-bg);color:var(--blue-txt);}
+.b-purple{background:var(--purple-bg);color:var(--purple-txt);}
+.b-orange{background:var(--orange-bg);color:var(--orange-txt);}
+.b-gray{background:#f3f4f6;color:#374151;}
+.b-yellow{background:#fef9c3;color:#713f12;}
+.pbar-bg{height:5px;border-radius:3px;background:var(--border);overflow:hidden;flex:1;}
+.pbar{height:100%;border-radius:3px;}
+.pbar-wrap{display:flex;align-items:center;gap:8px;}
+.vend-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.vend-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.vend-name{font-size:13px;font-weight:600;margin-bottom:10px;}
+.vend-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.vend-bar-track{background:var(--border);border-radius:3px;height:6px;margin-bottom:8px;overflow:hidden;}
+.vend-bar-fill{height:100%;border-radius:3px;transition:width .8s;}
+.vend-nums{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.mgn-row{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;}
+.mgn-cab{display:grid;grid-template-columns:80px 26px 1fr 120px 100px 90px 90px 54px 22px;gap:6px;align-items:center;padding:10px 14px;cursor:pointer;transition:background .1s;}
+.mgn-cab:hover{background:#fafafa;}
+.mgn-det{display:none;border-top:1px solid var(--border);}
+.mgn-det.open{display:block;}
+.det-hdr{display:grid;grid-template-columns:1fr 54px 90px 90px 90px 54px;gap:6px;padding:7px 14px;background:var(--bg);font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.det-hdr .r,.det-row .r{text-align:right;}
+.det-row{display:grid;grid-template-columns:1fr 54px 90px 90px 90px 54px;gap:6px;padding:8px 14px;border-top:1px solid var(--border);font-size:12px;align-items:center;}
+.det-row .r{font-family:'JetBrains Mono',monospace;}
+.arrow{color:var(--muted);font-size:10px;transition:transform .2s;text-align:center;}
+.search-wrap{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:6px 12px;margin-bottom:12px;}
+.search-wrap input{border:none;outline:none;font-family:'Questrial',sans-serif;font-size:13px;color:var(--text);width:100%;background:none;}
+.search-wrap input::placeholder{color:var(--muted);}
+.loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);gap:10px;font-size:13px;}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--yellow);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty{padding:32px;text-align:center;color:var(--muted);font-size:13px;}
+@media(max-width:900px){.g5,.g4{grid-template-columns:repeat(2,1fr);}.cr2{grid-template-columns:1fr;}.vend-grid{grid-template-columns:1fr 1fr;}.empresa-card{grid-template-columns:1fr 1fr;}.ec-div{display:none;}.mgn-cab{grid-template-columns:70px 1fr 80px 60px 18px;}}
 </style>
 </head>
 <body>
-
-<header class="header">
-  <div class="brand">
-    <div class="brand-mark">R</div>
-    <div>
-      <div class="brand-name">Rintusac SAC</div>
-      <div class="brand-sub">Dashboard Comercial</div>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">R</div>
+    <div class="logo-text">Rintusac SAC</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Comercial</div>
+    <div class="nav-item active" onclick="showSection('meta',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Resumen
+    </div>
+    <div class="nav-item" onclick="showSection('pipeline',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Pipeline CRM
+    </div>
+    <div class="nav-item" onclick="showSection('cotizaciones',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Cotizaciones
+    </div>
+    <div class="nav-item" onclick="showSection('clientes',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Clientes
+    </div>
+    <div class="nav-item" onclick="showSection('sector',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+      Por Sector
+    </div>
+    <div class="nav-item" onclick="showSection('producto',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      Productos
     </div>
   </div>
-  <div class="header-meta">
-    <strong id="periodo-label">Cargando...</strong>
-    Actualizado automáticamente
+  <div class="sidebar-section">
+    <div class="sidebar-label">Operaciones</div>
+    <div class="nav-item" onclick="showSection('margen',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Margen
+    </div>
+    <div class="nav-item" onclick="showSection('backlog',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+      Backlog
+    </div>
+    <div class="nav-item" onclick="showSection('cxc',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Cuentas x Cobrar
+    </div>
   </div>
-</header>
-
-<main class="main">
-
-  <div class="section-title" style="margin-bottom:14px">Resumen del periodo</div>
-
-  <div class="kpi-row" id="kpi-row">
-    <div class="loading"><div class="spinner"></div><span>Cargando datos...</span></div>
+  <div class="sidebar-footer">
+    <div class="s-avatar">R</div>
+    <div><div class="s-name">Dashboard</div><div class="s-role">Comercial · Rintusac</div></div>
   </div>
+</nav>
 
-  <div class="charts-grid" id="charts-grid" style="display:none">
-    <div class="card">
-      <div class="card-title">Ventas por sector — barras</div>
-      <div class="chart-wrap" style="height:280px">
-        <canvas id="chartBar" role="img" aria-label="Ventas por sector en barras horizontales"></canvas>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="toggleSidebar()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div>
+        <div class="topbar-title" id="section-title">Resumen Comercial</div>
+        <div class="topbar-sub">Rintusac SAC · Intercambiadores de calor</div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-title">Distribución por sector</div>
-      <div id="legend-donut" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:12px;color:#898781"></div>
-      <div class="chart-wrap" style="height:240px">
-        <canvas id="chartDonut" role="img" aria-label="Distribución porcentual por sector"></canvas>
-      </div>
+    <div class="topbar-right">
+      <div class="last-update" id="last-update">Cargando...</div>
+      <div class="btn-period" id="period-btns"></div>
     </div>
   </div>
 
-  <div class="section-title">Detalle por sector</div>
-  <div class="table-card" id="table-card">
-    <div class="loading"><div class="spinner"></div></div>
+  <!-- SUBNAVS -->
+  <div class="subnav" id="sn-meta">
+    <div class="sec-tab active" onclick="showSub('meta','general',this)">General</div>
+    <div class="sec-tab" onclick="showSub('meta','vendedores',this)">Por Vendedor</div>
+    <div class="sec-tab" onclick="showSub('meta','nuevos',this)">Clientes Nuevos</div>
   </div>
+  <div class="subnav" id="sn-cotizaciones" style="display:none">
+    <div class="sec-tab active" onclick="showSub('cotizaciones','activas',this)">Activas</div>
+    <div class="sec-tab" onclick="showSub('cotizaciones','historial',this)">Historial</div>
+    <div class="sec-tab" onclick="showSub('cotizaciones','porvendedor',this)">Por Vendedor</div>
+  </div>
+  <div class="subnav" id="sn-pipeline" style="display:none"></div>
+  <div class="subnav" id="sn-clientes" style="display:none"></div>
+  <div class="subnav" id="sn-sector" style="display:none"></div>
+  <div class="subnav" id="sn-producto" style="display:none"></div>
+  <div class="subnav" id="sn-margen" style="display:none"></div>
+  <div class="subnav" id="sn-backlog" style="display:none"></div>
+  <div class="subnav" id="sn-cxc" style="display:none"></div>
 
-</main>
+  <div class="content">
 
-<footer class="footer">
-  Rintusac SAC · Intercambiadores de calor · Lima, Perú &nbsp;·&nbsp;
-  Datos generados desde Odoo 17
-</footer>
+    <!-- META -->
+    <div id="sec-meta" class="section-view active">
+      <div id="sub-general">
+        <div id="empresa-block"><div class="loading"><div class="spin"></div>Cargando datos...</div></div>
+        <div class="sec-lbl" style="margin-top:4px">Cumplimiento por vendedor</div>
+        <div id="vend-block"><div class="loading"><div class="spin"></div></div></div>
+      </div>
+      <div id="sub-vendedores" style="display:none">
+        <div id="cumpl-block"><div class="loading"><div class="spin"></div></div></div>
+      </div>
+      <div id="sub-nuevos" style="display:none">
+        <div id="nuevos-block"><div class="loading"><div class="spin"></div></div></div>
+      </div>
+    </div>
+
+    <!-- PIPELINE -->
+    <div id="sec-pipeline" class="section-view">
+      <div class="kpi-grid g4" id="pipe-kpis"><div class="loading"><div class="spin"></div></div></div>
+      <div class="search-wrap">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="pipe-search" placeholder="Buscar oportunidad, cliente, vendedor..." oninput="renderPipeTable()">
+      </div>
+      <div id="pipe-table"><div class="loading"><div class="spin"></div></div></div>
+    </div>
+
+    <!-- COTIZACIONES -->
+    <div id="sec-cotizaciones" class="section-view">
+      <div id="sub-activas">
+        <div class="kpi-grid g4" id="cot-kpis"></div>
+        <div id="cot-act-table"></div>
+      </div>
+      <div id="sub-historial" style="display:none"><div id="cot-hist-table"></div></div>
+      <div id="sub-porvendedor" style="display:none"><div id="cot-vend-table"></div></div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div id="sec-clientes" class="section-view">
+      <div class="charts-row cr2">
+        <div class="chart-card"><div class="chart-title">Top 10 clientes — USD</div><div class="chart-wrap" style="height:280px"><canvas id="chart-cli"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Distribución</div><div id="cli-pie-legend" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;font-size:10px;color:var(--muted)"></div><div class="chart-wrap" style="height:230px"><canvas id="chart-cli-pie"></canvas></div></div>
+      </div>
+      <div id="cli-table"></div>
+    </div>
+
+    <!-- SECTOR -->
+    <div id="sec-sector" class="section-view">
+      <div class="charts-row cr2">
+        <div class="chart-card"><div class="chart-title">Ventas por sector</div><div class="chart-wrap" style="height:260px"><canvas id="chart-sec"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Distribución por sector</div><div id="sec-legend" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;font-size:10px;color:var(--muted)"></div><div class="chart-wrap" style="height:220px"><canvas id="chart-sec-pie"></canvas></div></div>
+      </div>
+      <div id="sec-table"></div>
+    </div>
+
+    <!-- PRODUCTO -->
+    <div id="sec-producto" class="section-view">
+      <div class="chart-card" style="margin-bottom:16px"><div class="chart-title">Top 15 productos / servicios</div><div class="chart-wrap" style="height:320px"><canvas id="chart-prod"></canvas></div></div>
+      <div id="prod-table"></div>
+    </div>
+
+    <!-- MARGEN -->
+    <div id="sec-margen" class="section-view">
+      <div class="kpi-grid g4" id="mgn-kpis"></div>
+      <div class="search-wrap">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="mgn-search" placeholder="Buscar cliente, factura, vendedor..." oninput="renderMargen()">
+      </div>
+      <div id="mgn-block"></div>
+    </div>
+
+    <!-- BACKLOG -->
+    <div id="sec-backlog" class="section-view">
+      <div class="kpi-grid g4" id="blg-kpis"></div>
+      <div class="sec-lbl">Facturado pendiente de entrega</div>
+      <div id="blg-fact"></div>
+      <div class="sec-lbl" style="margin-top:12px">Guías sin facturar</div>
+      <div id="blg-guia"></div>
+    </div>
+
+    <!-- CXC -->
+    <div id="sec-cxc" class="section-view">
+      <div class="kpi-grid g4" id="cxc-kpis"></div>
+      <div class="search-wrap">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="cxc-search" placeholder="Buscar cliente, factura..." oninput="renderCXC()">
+      </div>
+      <div id="cxc-table"></div>
+    </div>
+
+  </div>
+</div>
 
 <script>
-const CSV_URL = 'data/ventas_sector.csv';
+const BASE = 'data/';
+const FILES = {
+  cumplimiento:'temp_cumplimiento.csv', nuevos:'temp_clientes_nuevos.csv',
+  pipeline:'temp_pipeline.csv', cotizaciones:'temp_cotizaciones_activas.csv',
+  hist_cot:'temp_historial_cotizaciones.csv', cot_vend:'temp_cotizaciones_por_vendedor.csv',
+  v_cliente:'temp_ventas_cliente.csv', v_sector:'temp_ventas_sector.csv',
+  v_producto:'temp_ventas_producto.csv', mgn_cab:'temp_margen_cabecera.csv',
+  mgn_det:'temp_margen_detalle.csv', blg_fact:'temp_facturado_pend_entrega.csv',
+  guias:'temp_guias_sin_facturar.csv', cxc:'temp_cuentas_por_cobrar.csv'
+};
+const COLORS=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#4a3aa7','#e34948','#0ea5e9','#a16207'];
+let D={}, period='', periods=[], curSection='meta';
 
-const COLORS = [
-  '#2a78d6','#eb6834','#1baf7a','#eda100',
-  '#e87ba4','#008300','#4a3aa7','#e34948'
-];
+const fmt=v=>'$'+Math.round(parseFloat(v)||0).toLocaleString('es-PE');
+const fmtD=v=>v==null||v===''?'—':'$'+(parseFloat(v)||0).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pctStr=(v,t)=>t?((v/t)*100).toFixed(1)+'%':'0%';
+const pctN=(v,t)=>t?Math.round(v/t*100):0;
+const clean=s=>(s||'').replace(/^\uFEFF/,'').trim();
 
-function fmt(n) {
-  return '$' + Math.round(n).toLocaleString('es-PE');
+function loadCSV(key){
+  return fetch(BASE+FILES[key]).then(r=>r.text()).then(t=>{
+    D[key]=Papa.parse(t,{header:true,skipEmptyLines:true,transformHeader:h=>clean(h)}).data;
+  }).catch(()=>{D[key]=[];});
 }
-function pct(v, total) {
-  return ((v / total) * 100).toFixed(1) + '%';
+function fp(data,p,f='Periodo'){return p?data.filter(r=>r[f]===p):data;}
+function dChart(id){const c=Chart.getChart(id);if(c)c.destroy();}
+
+function barH(id,labels,vals,colors){
+  dChart(id);
+  new Chart(document.getElementById(id),{type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors||COLORS.slice(0,vals.length),borderRadius:3,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+      scales:{x:{grid:{color:'#E2E4EC'},ticks:{color:'#6B7280',font:{size:10},callback:v=>'$'+(v/1000).toFixed(0)+'k'},border:{display:false}},
+              y:{grid:{display:false},ticks:{color:'#1a1c28',font:{size:11}},border:{display:false}}}}});
+}
+function pie(id,labels,vals,colors){
+  dChart(id);
+  new Chart(document.getElementById(id),{type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors||COLORS.slice(0,vals.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)+' · '+pctStr(c.raw,vals.reduce((a,b)=>a+b,0))}}}}});
 }
 
-Papa.parse(CSV_URL, {
-  download: true,
-  header: true,
-  skipEmptyLines: true,
-  complete: function(results) {
-    const rows = results.data;
-    if (!rows.length) return;
+const SECTION_TITLES={meta:'Resumen Comercial',pipeline:'Pipeline CRM',cotizaciones:'Cotizaciones',clientes:'Ventas por Cliente',sector:'Ventas por Sector',producto:'Productos',margen:'Análisis de Margen',backlog:'Backlog',cxc:'Cuentas por Cobrar'};
 
-    const periodo = rows[0]['Periodo'] || '';
-    document.getElementById('periodo-label').textContent =
-      'Periodo: ' + periodo;
+function showSection(name,el){
+  curSection=name;
+  document.querySelectorAll('.section-view').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('section-title').textContent=SECTION_TITLES[name];
+  document.querySelectorAll('[id^="sn-"]').forEach(s=>s.style.display='none');
+  document.getElementById('sn-'+name).style.display='flex';
+  render(name);
+}
+function showSub(sec,sub,el){
+  el.closest('.subnav').querySelectorAll('.sec-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#sec-'+sec+'>div').forEach(d=>d.style.display='none');
+  document.getElementById('sub-'+sub).style.display='block';
+}
+function toggleSidebar(){document.body.classList.toggle('sb-closed');}
+function setPeriod(p,btn){
+  period=p;
+  document.querySelectorAll('.btn-p').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render(curSection);
+}
+function buildPeriodBtns(){
+  document.getElementById('period-btns').innerHTML=periods.map((p,i)=>
+    `<button class="btn-p${i===0?' active':''}" onclick="setPeriod('${p}',this)">${p}</button>`).join('');
+}
 
-    const labels = rows.map(r => r['Sector']);
-    const values = rows.map(r => parseFloat(r['Monto_USD']) || 0);
-    const total  = values.reduce((a, b) => a + b, 0);
-    const top    = Math.max(...values);
-
-    // KPIs
-    document.getElementById('kpi-row').innerHTML = `
-      <div class="kpi">
-        <div class="kpi-label">Ventas totales</div>
-        <div class="kpi-value">${fmt(total)}</div>
-        <div class="kpi-sub">USD · ${periodo}</div>
+// ── RENDER META ──
+function renderMeta(){
+  const rows=fp(D.cumplimiento,period);
+  if(!rows.length){document.getElementById('empresa-block').innerHTML='<div class="empty">Sin datos para este periodo</div>';return;}
+  const tMeta=rows.reduce((a,r)=>a+(parseFloat(r.Meta_USD)||0),0);
+  const tVenta=rows.reduce((a,r)=>a+(parseFloat(r.Venta_USD_Sin_IGV)||0),0);
+  const tProy=rows.reduce((a,r)=>a+(parseFloat(r.Proyeccion_Cierre)||0),0);
+  const av=tMeta?Math.round(tVenta/tMeta*100):0;
+  const avP=tMeta?Math.round(tProy/tMeta*100):0;
+  document.getElementById('empresa-block').innerHTML=`
+    <div class="empresa-card">
+      <div><div class="ec-lbl">Meta total</div><div class="ec-val">${fmt(tMeta)}</div></div>
+      <div class="ec-div"></div>
+      <div><div class="ec-lbl">Facturado</div><div class="ec-val yellow">${fmt(tVenta)}</div></div>
+      <div class="ec-div"></div>
+      <div><div class="ec-lbl">Proyección cierre</div><div class="ec-val">${fmt(tProy)}</div></div>
+      <div class="ec-div"></div>
+      <div><div class="ec-lbl">Avance</div><div class="ec-val yellow">${av}%</div></div>
+      <div class="ec-progress">
+        <div class="ec-prog-meta"><span>Facturado ${av}%</span><span>Proyectado ${avP}%</span><span>Meta ${fmt(tMeta)}</span></div>
+        <div class="bar-track"><div class="bar-real" style="width:${Math.min(av,100)}%"></div><div class="bar-proy" style="width:${Math.min(avP,100)}%"></div></div>
       </div>
-      <div class="kpi">
-        <div class="kpi-label">Sectores activos</div>
-        <div class="kpi-value">${rows.length}</div>
-        <div class="kpi-sub">con facturación</div>
+    </div>`;
+  document.getElementById('vend-block').innerHTML=`<div class="vend-grid">${rows.map(r=>{
+    const meta=parseFloat(r.Meta_USD)||0,venta=parseFloat(r.Venta_USD_Sin_IGV)||0,proy=parseFloat(r.Proyeccion_Cierre)||0;
+    const av2=meta?Math.round(venta/meta*100):0;
+    const col=av2>=100?'var(--green)':av2>=60?'var(--yellow)':'var(--red)';
+    return`<div class="vend-card">
+      <div class="vend-name">${r.Vendedor}</div>
+      <div class="vend-meta"><span>Facturado</span><span>${av2}%</span></div>
+      <div class="vend-bar-track"><div class="vend-bar-fill" style="width:${Math.min(av2,100)}%;background:${col}"></div></div>
+      <div class="vend-nums"><span style="color:var(--muted)">${fmt(venta)}</span>${meta?`<span style="color:var(--muted)">meta ${fmt(meta)}</span>`:''}</div>
+      ${proy>venta?`<div style="font-size:10px;color:var(--muted);margin-top:5px">Proy: <b>${fmt(proy)}</b></div>`:''}
+    </div>`;}).join('')}</div>`;
+  // tabla detalle vendedores
+  document.getElementById('cumpl-block').innerHTML=`<div class="tbl-card"><table>
+    <thead><tr><th>Vendedor</th><th class="r">Meta</th><th class="r">Facturado</th><th class="r">CRM pond.</th><th class="r">Proyección</th><th class="r">Avance</th></tr></thead>
+    <tbody>${rows.map(r=>{const av3=parseFloat(r.Pct_Avance)||0;const col=av3>=100?'b-green':av3>=60?'b-yellow':'b-red';
+      return`<tr><td>${r.Vendedor}</td><td class="r">${fmt(r.Meta_USD)}</td><td class="r">${fmt(r.Venta_USD_Sin_IGV)}</td><td class="r">${fmt(r.CRM_Ponderado)}</td><td class="r">${fmt(r.Proyeccion_Cierre)}</td>
+      <td class="r"><span class="badge ${col}">${Math.round(av3)}%</span></td></tr>`;}).join('')}</tbody></table></div>`;
+  // clientes nuevos
+  const nv=fp(D.nuevos,period);
+  document.getElementById('nuevos-block').innerHTML=nv.length?`<div class="tbl-card"><table>
+    <thead><tr><th>Cliente</th><th>Primera compra</th><th>Estado</th></tr></thead>
+    <tbody>${nv.map(r=>`<tr><td>${r.Cliente}</td><td class="muted">${r.Primera_Compra||r.Periodo}</td><td><span class="badge b-green">Nuevo</span></td></tr>`).join('')}</tbody></table></div>`
+    :'<div class="empty">Sin clientes nuevos en este periodo</div>';
+}
+
+// ── RENDER PIPELINE ──
+function renderPipeline(){
+  const all=D.pipeline;
+  const act=all.filter(r=>r.Estado!=='GANADA'&&r.Estado!=='PERDIDA');
+  const gan=all.filter(r=>r.Estado==='GANADA');
+  const per=all.filter(r=>r.Estado==='PERDIDA');
+  const pond=act.reduce((a,r)=>a+(parseFloat(r.Monto_Ponderado)||0),0);
+  document.getElementById('pipe-kpis').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">Activas</div><div class="kpi-val">${act.length}</div><div class="kpi-sub">${fmt(pond)} ponderado</div></div>
+    <div class="kpi-card"><div class="kpi-label">Monto ponderado</div><div class="kpi-val yellow">${fmt(pond)}</div><div class="kpi-sub">USD</div></div>
+    <div class="kpi-card c-green"><div class="kpi-label">Ganadas</div><div class="kpi-val green">${gan.length}</div><div class="kpi-sub">${fmt(gan.reduce((a,r)=>a+(parseFloat(r.Monto_Esperado)||0),0))}</div></div>
+    <div class="kpi-card c-red"><div class="kpi-label">Perdidas</div><div class="kpi-val red">${per.length}</div><div class="kpi-sub">${fmt(per.reduce((a,r)=>a+(parseFloat(r.Monto_Esperado)||0),0))}</div></div>`;
+  renderPipeTable();
+}
+function renderPipeTable(){
+  const q=(document.getElementById('pipe-search').value||'').toLowerCase();
+  const rows=D.pipeline.filter(r=>r.Estado!=='GANADA'&&r.Estado!=='PERDIDA'&&(!q||[r.Oportunidad,r.Cliente,r.Vendedor].some(s=>(s||'').toLowerCase().includes(q))));
+  const eb=e=>{const m={'NUEVA':'b-blue','EN NEGOCIACIÓN':'b-yellow','APROBADA':'b-green','ORDEN CONFIRMADA':'b-green','PERDIDA':'b-red'};return`<span class="badge ${m[e]||'b-gray'}">${e||''}</span>`;};
+  document.getElementById('pipe-table').innerHTML=rows.length?`<div class="tbl-card"><table>
+    <thead><tr><th>Código</th><th>Oportunidad</th><th>Cliente</th><th>Vendedor</th><th>Etapa/Estado</th><th class="r">Esperado</th><th class="r">Ponderado</th><th>Cierre</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td class="muted" style="font-family:'JetBrains Mono',monospace;font-size:10px">${r.Codigo}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.Oportunidad}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${r.Cliente}</td>
+      <td style="font-size:11px">${r.Vendedor}</td>
+      <td>${eb(r.Estado)}</td>
+      <td class="r">${fmt(r.Monto_Esperado)}</td>
+      <td class="r">${fmt(r.Monto_Ponderado)}</td>
+      <td class="muted" style="font-size:11px">${r.Fecha_Cierre_Esp||''}</td>
+    </tr>`).join('')}</tbody></table></div>`:'<div class="empty">Sin oportunidades activas</div>';
+}
+
+// ── RENDER COTIZACIONES ──
+function renderCotizaciones(){
+  const rows=fp(D.cotizaciones,period);
+  const total=rows.reduce((a,r)=>a+(parseFloat(r.Monto_Sin_IGV)||0),0);
+  const env=rows.filter(r=>r.Estado==='Enviada').length;
+  const rev=rows.filter(r=>r.Alerta==='Revisar').length;
+  document.getElementById('cot-kpis').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">Total cotizaciones</div><div class="kpi-val">${rows.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Monto total</div><div class="kpi-val yellow">${fmt(total)}</div><div class="kpi-sub">sin IGV</div></div>
+    <div class="kpi-card c-green"><div class="kpi-label">Enviadas</div><div class="kpi-val green">${env}</div></div>
+    <div class="kpi-card c-red"><div class="kpi-label">Requieren revisión</div><div class="kpi-val red">${rev}</div></div>`;
+  const eb=e=>{const m={'Enviada':'b-blue','Borrador':'b-gray','Confirmada':'b-green','Cancelada':'b-red'};return`<span class="badge ${m[e]||'b-gray'}">${e||''}</span>`;};
+  const ab=a=>{const m={'Revisar':'b-red','Seguimiento':'b-orange','Reciente':'b-green'};return a?`<span class="badge ${m[a]||'b-gray'}">${a}</span>`:''};
+  document.getElementById('cot-act-table').innerHTML=`<div class="tbl-card"><table>
+    <thead><tr><th>Cotización</th><th>Cliente</th><th>Vendedor</th><th>Estado</th><th>Alerta</th><th class="r">Días</th><th class="r">Monto</th><th>Vence</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${r.Cotizacion}</td>
+      <td style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${r.Cliente}</td>
+      <td style="font-size:11px">${r.Vendedor}</td>
+      <td>${eb(r.Estado)}</td><td>${ab(r.Alerta)}</td>
+      <td class="r">${r.Dias_Activa||0}</td>
+      <td class="r">${fmt(r.Monto_Sin_IGV)}</td>
+      <td class="muted" style="font-size:11px">${r.Vencimiento||''}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+  const hist=fp(D.hist_cot,period);
+  document.getElementById('cot-hist-table').innerHTML=`<div class="tbl-card"><table>
+    <thead><tr><th>Cotización</th><th>Cliente</th><th>Vendedor</th><th>Estado</th><th class="r">Monto</th><th>Fecha</th></tr></thead>
+    <tbody>${hist.map(r=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${r.Cotizacion}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${r.Cliente}</td>
+      <td style="font-size:11px">${r.Vendedor}</td>
+      <td>${eb(r.Estado)}</td>
+      <td class="r">${fmt(r.Monto_Sin_IGV)}</td>
+      <td class="muted" style="font-size:11px">${r.Fecha||''}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+  document.getElementById('cot-vend-table').innerHTML=`<div class="tbl-card"><table>
+    <thead><tr><th>Vendedor</th><th class="r">Cotizaciones</th><th class="r">Clientes</th><th class="r">Monto total</th><th class="r">Recientes</th><th class="r">Revisar</th></tr></thead>
+    <tbody>${D.cot_vend.map(r=>`<tr>
+      <td>${r.Vendedor}</td><td class="r">${r.Cotizaciones}</td><td class="r">${r.Clientes_Unicos}</td>
+      <td class="r">${fmt(r.Monto_Total)}</td>
+      <td class="r"><span class="badge b-green">${r.Recientes}</span></td>
+      <td class="r">${parseInt(r.Revisar)>0?`<span class="badge b-red">${r.Revisar}</span>`:r.Revisar}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ── RENDER CLIENTES ──
+function renderClientes(){
+  const rows=fp(D.v_cliente,period).sort((a,b)=>(parseFloat(b.Monto_USD)||0)-(parseFloat(a.Monto_USD)||0));
+  const total=rows.reduce((a,r)=>a+(parseFloat(r.Monto_USD)||0),0);
+  const top=rows.slice(0,10);
+  barH('chart-cli',top.map(r=>r.Cliente.length>28?r.Cliente.slice(0,28)+'…':r.Cliente),top.map(r=>parseFloat(r.Monto_USD)||0));
+  pie('chart-cli-pie',top.map(r=>r.Cliente.split(' ').slice(0,2).join(' ')),top.map(r=>parseFloat(r.Monto_USD)||0));
+  document.getElementById('cli-pie-legend').innerHTML=top.map((r,i)=>`<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:${COLORS[i%COLORS.length]}"></span>${r.Cliente.split(' ')[0]}</span>`).join('');
+  document.getElementById('cli-table').innerHTML=`<div class="tbl-card"><table>
+    <thead><tr><th>#</th><th>Cliente</th><th>Periodo</th><th>Participación</th><th class="r">Monto USD</th></tr></thead>
+    <tbody>${rows.map((r,i)=>{const v=parseFloat(r.Monto_USD)||0;const p=pctN(v,total);return`<tr>
+      <td class="muted" style="font-family:'JetBrains Mono',monospace">${i+1}</td>
+      <td>${r.Cliente}</td><td class="muted">${r.Periodo}</td>
+      <td><div class="pbar-wrap"><div class="pbar-bg"><div class="pbar" style="width:${p}%;background:${COLORS[i%COLORS.length]}"></div></div><span style="font-size:11px;color:var(--muted);min-width:34px">${p}%</span></div></td>
+      <td class="r">${fmt(v)}</td>
+    </tr>`;}).join('')}</tbody></table></div>`;
+}
+
+// ── RENDER SECTOR ──
+function renderSector(){
+  const rows=fp(D.v_sector,period).sort((a,b)=>(parseFloat(b.Monto_USD)||0)-(parseFloat(a.Monto_USD)||0));
+  const total=rows.reduce((a,r)=>a+(parseFloat(r.Monto_USD)||0),0);
+  barH('chart-sec',rows.map(r=>r.Sector),rows.map(r=>parseFloat(r.Monto_USD)||0));
+  pie('chart-sec-pie',rows.map(r=>r.Sector),rows.map(r=>parseFloat(r.Monto_USD)||0));
+  document.getElementById('sec-legend').innerHTML=rows.map((r,i)=>`<span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:${COLORS[i%COLORS.length]}"></span>${r.Sector.split('/')[0].trim()} ${pctStr(parseFloat(r.Monto_USD)||0,total)}</span>`).join('');
+  document.getElementById('sec-table').innerHTML=`<div class="tbl-card"><table>
+    <thead><tr><th>Sector</th><th>Periodo</th><th>Participación</th><th class="r">Monto USD</th></tr></thead>
+    <tbody>${rows.map((r,i)=>{const v=parseFloat(r.Monto_USD)||0;const p=pctN(v,total);return`<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:8px"></span>${r.Sector}</td>
+      <td class="muted">${r.Periodo}</td>
+      <td><div class="pbar-wrap"><div class="pbar-bg"><div class="pbar" style="width:${p}%;background:${COLORS[i%COLORS.length]}"></div></div><span style="font-size:11px;color:var(--muted);min-width:34px">${p}%</span></div></td>
+      <td class="r">${fmt(v)}</td>
+    </tr>`;}).join('')}</tbody></table></div>`;
+}
+
+// ── RENDER PRODUCTO ──
+function renderProducto(){
+  const all=fp(D.v_producto,period).sort((a,b)=>(parseFloat(b.Monto_USD)||0)-(parseFloat(a.Monto_USD)||0));
+  const top=all.slice(0,15);
+  const total=all.reduce((a,r)=>a+(parseFloat(r.Monto_USD)||0),0);
+  dChart('chart-prod');
+  new Chart(document.getElementById('chart-prod'),{type:'bar',
+    data:{labels:top.map(r=>r.Producto.length>45?r.Producto.slice(0,45)+'…':r.Producto),datasets:[{data:top.map(r=>parseFloat(r.Monto_USD)||0),backgroundColor:COLORS[0],borderRadius:3,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+      scales:{x:{grid:{color:'#E2E4EC'},ticks:{color:'#6B7280',font:{size:10},callback:v=>'$'+(v/1000).toFixed(0)+'k'},border:{display:false}},y:{grid:{display:false},ticks:{color:'#1a1c28',font:{size:10}},border:{display:false}}}}});
+  document.getElementById('prod-table').innerHTML=`<div class="tbl-card"><table>
+    <thead><tr><th>Producto / Servicio</th><th>Marca</th><th class="r">Cant.</th><th class="r">Monto USD</th><th class="r">Part.</th></tr></thead>
+    <tbody>${all.map(r=>{const v=parseFloat(r.Monto_USD)||0;return`<tr>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.Producto}</td>
+      <td class="muted">${r.Marca||'—'}</td>
+      <td class="r">${r.Cantidad||0}</td>
+      <td class="r">${fmt(v)}</td>
+      <td class="r">${pctStr(v,total)}</td>
+    </tr>`;}).join('')}</tbody></table></div>`;
+}
+
+// ── RENDER MARGEN ──
+function renderMargenKPIs(){
+  const rows=fp(D.mgn_cab,period);
+  const venta=rows.reduce((a,r)=>a+(parseFloat(r.Venta_USD)||0),0);
+  const costo=rows.reduce((a,r)=>a+(parseFloat(r.Costo_USD)||0),0);
+  const mgn=venta-costo;
+  const pm=venta?Math.round(mgn/venta*100):0;
+  document.getElementById('mgn-kpis').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">Facturas analizadas</div><div class="kpi-val">${rows.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Venta total</div><div class="kpi-val yellow">${fmt(venta)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Costo total</div><div class="kpi-val">${fmt(costo)}</div></div>
+    <div class="kpi-card ${pm>=30?'c-green':pm>=15?'accent':'c-red'}"><div class="kpi-label">Margen neto</div><div class="kpi-val ${pm>=30?'green':pm>=15?'yellow':'red'}">${fmt(mgn)} <span style="font-size:13px">(${pm}%)</span></div></div>`;
+}
+function renderMargen(){
+  const q=(document.getElementById('mgn-search').value||'').toLowerCase();
+  const rows=fp(D.mgn_cab,period).filter(r=>!q||[r.Cliente,r.Nro_Factura,r.Vendedor].some(s=>(s||'').toLowerCase().includes(q)));
+  const dets=D.mgn_det;
+  const pc=p=>p<0?'var(--red-txt)':p<15?'var(--orange-txt)':p<30?'#b45309':'var(--green-txt)';
+  document.getElementById('mgn-block').innerHTML=rows.length?rows.map(r=>{
+    const v=parseFloat(r.Venta_USD)||0,c=parseFloat(r.Costo_USD)||0,m=parseFloat(r.Margen_USD)||0,pm=parseFloat(r.Pct_Margen)||0;
+    const color=pc(pm);
+    const rd=dets.filter(d=>d.Nro_Factura===r.Nro_Factura);
+    const icon=r.Equipo?.includes('MANT')?'🔧':r.Equipo?.includes('FABRIC')?'🏭':'🛒';
+    return`<div class="mgn-row">
+      <div class="mgn-cab" onclick="toggleDet(this)">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">${r.Fecha}</div>
+        <div>${icon}</div>
+        <div style="overflow:hidden"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.Cliente}</div>
+          <div style="font-size:10px;color:var(--muted)">${r.Nro_Factura} · ${r.Vendedor}</div></div>
+        <div><span class="badge b-gray">${(r.Equipo||'').replace('VENTAS-','')}</span></div>
+        <div class="r" style="font-family:'JetBrains Mono',monospace;font-size:12px">${fmt(v)}</div>
+        <div class="r" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">${fmt(c)}</div>
+        <div class="r" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${color}">${fmt(m)}</div>
+        <div class="r" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${color}">${Math.round(pm)}%</div>
+        <div class="arrow">▼</div>
       </div>
-      <div class="kpi">
-        <div class="kpi-label">Sector líder</div>
-        <div class="kpi-value" style="font-size:18px;line-height:1.2">${labels[0]}</div>
-        <div class="kpi-sub">${fmt(values[0])}</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Ticket promedio</div>
-        <div class="kpi-value">${fmt(total / rows.length)}</div>
-        <div class="kpi-sub">USD por sector</div>
-      </div>
-    `;
+      ${rd.length?`<div class="mgn-det">
+        <div class="det-hdr"><div>Producto</div><div class="r">Cant.</div><div class="r">Venta</div><div class="r">Costo</div><div class="r">Margen</div><div class="r">%</div></div>
+        ${rd.map(d=>`<div class="det-row">
+          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.Producto||'—'}</div>
+          <div class="r">${d.Cantidad||''}</div>
+          <div class="r">${fmt(d.Venta_USD)}</div>
+          <div class="r" style="color:var(--muted)">${fmt(d.Costo_USD)}</div>
+          <div class="r" style="color:${pc(parseFloat(d.Pct_Margen)||0)}">${fmt(d.Margen_USD)}</div>
+          <div class="r" style="color:${pc(parseFloat(d.Pct_Margen)||0)}">${Math.round(parseFloat(d.Pct_Margen)||0)}%</div>
+        </div>`).join('')}
+      </div>`:''}
+    </div>`;}).join(''):'<div class="empty">Sin resultados</div>';
+}
+function toggleDet(el){
+  const det=el.nextElementSibling;const arrow=el.querySelector('.arrow');
+  if(!det)return;
+  const open=!det.classList.contains('open');
+  det.classList.toggle('open',open);
+  if(arrow)arrow.textContent=open?'▲':'▼';
+}
 
-    document.getElementById('charts-grid').style.display = 'grid';
+// ── RENDER BACKLOG ──
+function renderBacklog(){
+  const fact=D.blg_fact, guias=D.guias;
+  const tf=fact.reduce((a,r)=>a+(parseFloat(r.Total)||0),0);
+  const tg=guias.reduce((a,r)=>a+(parseFloat(r.Total)||0),0);
+  document.getElementById('blg-kpis').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">Fact. s/entregar</div><div class="kpi-val">${fact.length}</div><div class="kpi-sub">${fmt(tf)}</div></div>
+    <div class="kpi-card c-red"><div class="kpi-label">Monto pendiente entrega</div><div class="kpi-val red">${fmt(tf)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Guías sin facturar</div><div class="kpi-val">${guias.length}</div><div class="kpi-sub">${fmt(tg)}</div></div>
+    <div class="kpi-card c-red"><div class="kpi-label">Monto guías pendientes</div><div class="kpi-val red">${fmt(tg)}</div></div>`;
+  const tbl=(rows,tipo)=>rows.length?`<div class="tbl-card"><table>
+    <thead><tr><th>Orden</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th>Equipo</th><th class="r">Total</th><th>Estado</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${r.Numero}</td>
+      <td class="muted" style="font-size:11px">${r.Fecha_Orden}</td>
+      <td style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${r.Cliente}</td>
+      <td style="font-size:11px">${r.Vendedor}</td>
+      <td style="font-size:11px">${(r.Equipo||'').replace('VENTAS-','')}</td>
+      <td class="r">${fmt(r.Total)}</td>
+      <td><span class="badge ${tipo==='fact'?'b-orange':'b-purple'}">${r.Estado_Entrega||r.Estado_Factura}</span></td>
+    </tr>`).join('')}</tbody></table></div>`:'<div class="empty">Sin registros</div>';
+  document.getElementById('blg-fact').innerHTML=tbl(fact,'fact');
+  document.getElementById('blg-guia').innerHTML=tbl(guias,'guia');
+}
 
-    // Bar chart horizontal
-    new Chart(document.getElementById('chartBar'), {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: values,
-          backgroundColor: COLORS.slice(0, values.length),
-          borderRadius: 4,
-          borderSkipped: false
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => ' ' + fmt(ctx.raw) + ' (' + pct(ctx.raw, total) + ')'
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: { color: '#e1e0d9' },
-            ticks: {
-              color: '#898781', font: { size: 11 },
-              callback: v => '$' + (v/1000).toFixed(0) + 'k'
-            },
-            border: { display: false }
-          },
-          y: {
-            grid: { display: false },
-            ticks: { color: '#52514e', font: { size: 11 } },
-            border: { display: false }
-          }
-        }
-      }
-    });
+// ── RENDER CXC ──
+function renderCXCKPIs(){
+  const pend=D.cxc.filter(r=>r.Estatus==='PENDIENTE');
+  const total=pend.reduce((a,r)=>a+(parseFloat(r.USD)||0),0);
+  const mora=pend.filter(r=>parseInt(r.Dias_Mora)>0);
+  const totMora=mora.reduce((a,r)=>a+(parseFloat(r.USD)||0),0);
+  document.getElementById('cxc-kpis').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">Facturas pendientes</div><div class="kpi-val">${pend.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total por cobrar</div><div class="kpi-val yellow">${fmt(total)}</div><div class="kpi-sub">USD</div></div>
+    <div class="kpi-card c-red"><div class="kpi-label">En mora</div><div class="kpi-val red">${mora.length}</div><div class="kpi-sub">${fmt(totMora)}</div></div>
+    <div class="kpi-card c-green"><div class="kpi-label">Al día</div><div class="kpi-val green">${pend.length-mora.length}</div><div class="kpi-sub">${fmt(total-totMora)}</div></div>`;
+}
+function renderCXC(){
+  const q=(document.getElementById('cxc-search').value||'').toLowerCase();
+  const rows=D.cxc.filter(r=>r.Estatus==='PENDIENTE'&&(!q||[r.Cliente,r.NroFactura].some(s=>(s||'').toLowerCase().includes(q)))).sort((a,b)=>(parseInt(b.Dias_Mora)||0)-(parseInt(a.Dias_Mora)||0));
+  document.getElementById('cxc-table').innerHTML=rows.length?`<div class="tbl-card"><table>
+    <thead><tr><th>Factura</th><th>Cliente</th><th>Vendedor</th><th>F. Emisión</th><th>Situación</th><th class="r">USD</th><th class="r">Mora</th></tr></thead>
+    <tbody>${rows.map(r=>{const dm=parseInt(r.Dias_Mora)||0;
+      const mb=dm>60?`<span class="badge b-red">${dm}d</span>`:dm>30?`<span class="badge b-orange">${dm}d</span>`:dm>0?`<span class="badge b-yellow">${dm}d</span>`:`<span class="badge b-green">Al día</span>`;
+      return`<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${r.NroFactura}</td>
+        <td style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${r.Cliente}</td>
+        <td style="font-size:11px">${r.RR_VV||'—'}</td>
+        <td class="muted" style="font-size:11px">${r.F_Emision||''}</td>
+        <td><span class="badge ${r.Situacion==='NORMAL'?'b-green':'b-orange'}">${r.Situacion||r.Estatus}</span></td>
+        <td class="r">${fmtD(r.USD)}</td>
+        <td class="r">${mb}</td>
+      </tr>`;}).join('')}</tbody></table></div>`:'<div class="empty">Sin facturas pendientes</div>';
+}
 
-    // Donut chart
-    const legendEl = document.getElementById('legend-donut');
-    labels.forEach((l, i) => {
-      legendEl.innerHTML += `<span style="display:flex;align-items:center;gap:4px">
-        <span style="width:10px;height:10px;border-radius:2px;background:${COLORS[i]};flex-shrink:0"></span>
-        ${l.split('/')[0].trim()} ${pct(values[i], total)}
-      </span>`;
-    });
+// ── DISPATCHER ──
+function render(name){
+  if(name==='meta'){renderMeta();}
+  else if(name==='pipeline'){renderPipeline();}
+  else if(name==='cotizaciones'){renderCotizaciones();}
+  else if(name==='clientes'){renderClientes();}
+  else if(name==='sector'){renderSector();}
+  else if(name==='producto'){renderProducto();}
+  else if(name==='margen'){renderMargenKPIs();renderMargen();}
+  else if(name==='backlog'){renderBacklog();}
+  else if(name==='cxc'){renderCXCKPIs();renderCXC();}
+}
 
-    new Chart(document.getElementById('chartDonut'), {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: values,
-          backgroundColor: COLORS.slice(0, values.length),
-          borderWidth: 2,
-          borderColor: '#ffffff'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '62%',
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => ' ' + fmt(ctx.raw) + ' · ' + pct(ctx.raw, total)
-            }
-          }
-        }
-      }
-    });
-
-    // Table
-    let rows_html = '';
-    rows.forEach((r, i) => {
-      const v = parseFloat(r['Monto_USD']) || 0;
-      const p = (v / total * 100).toFixed(1);
-      const barW = Math.round(v / top * 120);
-      rows_html += `<tr>
-        <td><span class="badge" style="background:${COLORS[i]}"></span>${r['Sector']}</td>
-        <td>${r['Periodo']}</td>
-        <td>
-          <div class="pct-bar-wrap">
-            <div class="pct-bar" style="width:${barW}px;opacity:0.7;background:${COLORS[i]}"></div>
-            <span class="pct-label">${p}%</span>
-          </div>
-        </td>
-        <td>${fmt(v)}</td>
-      </tr>`;
-    });
-
-    document.getElementById('table-card').innerHTML = `
-      <div class="table-header">
-        <div class="card-title" style="margin:0">Ventas por sector · ${periodo}</div>
-      </div>
-      <table>
-        <thead><tr>
-          <th>Sector</th><th>Periodo</th><th>Participación</th><th>Monto USD</th>
-        </tr></thead>
-        <tbody>${rows_html}</tbody>
-      </table>
-    `;
-  },
-  error: function() {
-    document.getElementById('kpi-row').innerHTML =
-      '<div class="loading">No se pudo cargar el archivo CSV.<br>Verifica que <code>data/ventas_sector.csv</code> existe en el repositorio.</div>';
-  }
-});
+// ── INIT ──
+async function init(){
+  await Promise.all(Object.keys(FILES).map(k=>loadCSV(k)));
+  periods=[...new Set(D.cumplimiento.map(r=>r.Periodo).filter(Boolean))].sort().reverse();
+  period=periods[0]||'';
+  buildPeriodBtns();
+  const now=new Date();
+  document.getElementById('last-update').textContent=`Act. ${now.toLocaleDateString('es-PE')} ${now.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}`;
+  render('meta');
+}
+init();
 </script>
 </body>
 </html>
